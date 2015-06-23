@@ -2,7 +2,8 @@
 namespace Module\DB;
 
 require_once(dirname(__FILE__) . '/class.db.php');
-require_once(dirname(__FILE__) . '/../../../include/class.debug.php');
+require_once(dirname(__FILE__) . '/../../core/class.debug.php');
+
 /**
  * Base class that represents a record in a table.
  *
