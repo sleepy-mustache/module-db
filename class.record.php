@@ -43,6 +43,10 @@ require_once(dirname(__FILE__) . '/../../core/class.debug.php');
  *
  * ### Changelog
  *
+ * ## Version 1.3
+ * * Bugfix when columns are reserved names
+ * * Added Record::isNew()
+ *
  * ## Version 1.2
  * * Added namespacing
  *
@@ -53,9 +57,9 @@ require_once(dirname(__FILE__) . '/../../core/class.debug.php');
  * * class.hooks.php
  * * class.db.php
  *
- * @date June 16, 2014
+ * @date May 15, 2019
  * @author Jaime A. Rodriguez <hi.i.am.jaime@gmail.com>
- * @version  1.1
+ * @version  1.3
  * @license  http://opensource.org/licenses/MIT
  **/
 
@@ -68,12 +72,12 @@ class Record {
 	/**
 	 * string The name of the table
 	 */
-	protected $table;
+	public $table;
 
 	/**
 	 * string The primary key of the table
 	 */
-	protected $primaryKey = 'id';
+	public $primaryKey = 'id';
 
 	/**
 	 * array The data of the record get loaded here
@@ -105,6 +109,10 @@ class Record {
 		if ($id) {
 			$this->load($id);
 		}
+	}
+
+	public function isNew() : bool {
+		return !isset($this->columns[$this->primaryKey]);
 	}
 
 	/**
@@ -148,7 +156,7 @@ class Record {
 		// set up insert statement, don't update id
 		foreach ($this->columns as $key => $value) {
 			if ($key !== $this->primaryKey) {
-				$sql .= " {$key}=:{$key},";
+				$sql .= " `{$key}`=:{$key},";
 				$col[":{$key}"] = $value;
 			} else {
 				$col[":{$key}"] = $value;
