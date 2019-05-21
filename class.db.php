@@ -74,7 +74,9 @@ abstract class DB {
 		if (!self::$instance) {
 			self::$instance = new \PDO("mysql:host=" . self::$dbhost . ";dbname=" . self::$dbname, self::$dbuser, self::$dbpass);
 			self::$instance-> setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+			self::$instance-> setAttribute(\PDO::ATTR_EMULATE_PREPARES, false);
 		}
+		
 		return self::$instance;
 	}
 }
