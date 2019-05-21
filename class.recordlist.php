@@ -39,30 +39,64 @@ class RecordList extends \ArrayIterator {
    */
   protected $db;
 
-  public function __construct(Record $record, string $where = "") {
+  public function __construct(Record $record, string $where = "", array $data = []) {   
+    $this->data = $data; 
+    
     $items = [];
-    $key = \Sleepy\Hook::addFilter('record_list_key', $record->primaryKey);
-    $table = \Sleepy\Hook::addFilter('record_list_table', $record->table);
-    $where = \Sleepy\Hook::addFilter('record_list_where', $where);
+    
+    $this->key   = \Sleepy\Hook::addFilter('record_list_key',   $record->primaryKey);
+    $this->table = \Sleepy\Hook::addFilter('record_list_table', $record->table);
+    $this->where = \Sleepy\Hook::addFilter('record_list_where', $where);
 
     $this->db = DB::getInstance();
 
-    if (!empty($where)) {
-      $query = $this->db->prepare("SELECT `{$key}` FROM `{$table}` WHERE {$where}");
+    if (!empty($this->where)) {
+      $query = $this->db->prepare("SELECT `{$this->key}` FROM `{$this->table}` WHERE {$this->where}");
     } else {
-      $query = $this->db->prepare("SELECT `{$key}` FROM `{$table}`");
+      $query = $this->db->prepare("SELECT `{$this->key}` FROM `{$this->table}`");
     }
 
-    $query->execute();
+    if (count($this->data)) {
+      $query->execute($this->data);
+    } else {
+      $query->execute();
+    }
+
     $query->setFetchMode(\PDO::FETCH_ASSOC);
 
     foreach ($rows = $query->fetchAll() as $row) {
       $instance = clone $record;
-      $instance->load($row[$key]);
+      $instance->load($row[$this->key]);
       \Sleepy\Hook::addFilter("record_list_item", $instance);
       array_push($items, $instance);
     }
 
     parent::__construct($items);
+  }
+
+  public function getTotal() {
+    $data = $this->data;
+    
+    if (!empty($this->where)) {
+      // We have to remove the offset and limit if they exist
+      $where = preg_replace('/\s?(LIMIT ?[0-9]*(:limit)?)?\s(OFFSET ?[0-9]*(:offset)?)/i', '', $this->where);
+
+      // Drop the data if they exist as well
+      if (isset($data[':limit'])) unset($data[':limit']);
+      if (isset($data[':offset'])) unset($data[':offset']);
+
+      $query = $this->db->prepare("SELECT count(*) FROM `{$this->table}` WHERE {$where}");
+    } else {
+      $query = $this->db->prepare("SELECT count(*) FROM `{$this->table}`");
+    }
+    
+    if (count($data)) {
+      $query->execute($data);
+    } else {
+      $query->execute();
+    }
+    
+    $results = $query->fetch();
+    return $results[0];
   }
 }
