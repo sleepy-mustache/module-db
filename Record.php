@@ -1,8 +1,10 @@
 <?php
 namespace Module\DB;
 
-require_once(dirname(__FILE__) . '/class.db.php');
-require_once(dirname(__FILE__) . '/../../core/class.debug.php');
+use Sleepy\Core\Hook;
+use Sleepy\Core\Module;
+use Sleepy\Core\Debug;
+use Module\DB\Connection;
 
 /**
  * Base class that represents a record in a table.
@@ -15,33 +17,33 @@ require_once(dirname(__FILE__) . '/../../core/class.debug.php');
  * ### Usage
  *
  * <code>
- *   // load a record with id= 5 from a table called 'user'
- *   class user extends \Module\DB\Record {
- *     public $table = 'user';
+ *   use Module\DB\Record
+ *
+ *   class User extends Record {
+ *     public $table = 'users';
  *   }
  *
- *   $u = new user();
- *   $u->load(5);
- *   $u->columns['first_name'] = 'Joe';
- * </code>
- *
- * You can then save the new information by calling the save method:
- *
- * <code>
- *   $u->save();
+ *  $u = new User();
+ *  $u->columns['user_id'] = 0;
+ *  $u->columns['name'] = "John Doe";
+ *  $u->columns['email'] = "john@doe.com";
+ *  $u->columns['password'] = password_hash('asdf', PASSWORD_DEFAULT);
+ *  $u->save();
  * </code>
  *
  * You can also show a nice form to edit or add new records like this
  *
  * <code>
  *   $u->form(array(
- *     'first_name' => 'First Name: ',
- *     'last_name' => 'Last Name: ',
- *     'phone' => '(800) 555-5555'
+ *     'name' => 'Full Name: ',
+ *     'email' => 'Email Address: '
  *   ));
  * </code>
  *
  * ### Changelog
+ * 
+ * ## Version 2.0
+ * * Made 2.x compatible
  *
  * ## Version 1.3
  * * Bugfix when columns are reserved names
@@ -53,13 +55,9 @@ require_once(dirname(__FILE__) . '/../../core/class.debug.php');
  * ## Version 1.1
  * * Added the date section to the documentation
  *
- * @section dependencies Dependencies
- * * class.hooks.php
- * * class.db.php
- *
- * @date May 15, 2019
+ * @date July 30, 2020
  * @author Jaime A. Rodriguez <hi.i.am.jaime@gmail.com>
- * @version  1.3
+ * @version  2.0
  * @license  http://opensource.org/licenses/MIT
  **/
 
@@ -95,7 +93,7 @@ class Record {
 	 * @param string $id The id to load automatically
 	 */
 	public function __construct($id=0) {
-		$this->db = DB::getInstance();
+		$this->db = Connection::getInstance();
 
 		$select = $this->db->query("SELECT * FROM `{$this->table}` LIMIT 1");
 
@@ -173,9 +171,9 @@ class Record {
 		$result = $this->db->prepare($sql);
 
 		// save
-		\Sleepy\Hook::addAction('recordBeforeSave');
+		Hook::addAction('recordBeforeSave');
 		$result->execute($col);
-		\Sleepy\Hook::addAction('recordAfterSave');
+		Hook::addAction('recordAfterSave');
 
 		if ($new) {
 			if ($result->rowCount()) {
@@ -195,14 +193,14 @@ class Record {
 	 * @return bool True if delete is successful
 	 */
 	public function delete() {
-		\Sleepy\Hook::addAction('recordBeforeDelete');
+		Hook::addAction('recordBeforeDelete');
 		$query = $this->db->prepare('DELETE FROM ' . $this->table . " WHERE {$this->primaryKey}=:{$this->primaryKey}");
-		//\Sleepy\Debug::out($query->debugDumpParams());
-		if ($query->execute(array(":{$this->primaryKey}" => $this->columns[$this->primaryKey]))) {
-			\Sleepy\Hook::addAction('recordDeleteSucessful');
+
+        if ($query->execute(array(":{$this->primaryKey}" => $this->columns[$this->primaryKey]))) {
+			Hook::addAction('recordDeleteSucessful');
 			return true;
 		} else {
-			\Sleepy\Hook::addAction('recordDeleteError');
+			Hook::addAction('recordDeleteError');
 			throw new \Exception("{$this->table}: Record was not deleted.");
 		}
 	}
@@ -215,7 +213,7 @@ class Record {
 	 * @param  boolean $submit Show the submit button?
 	 * @return void            returns nothing
 	 */
-	public function form(Array $fields, $legend='table_name', $submit=true) {
+	public function form(Array $fields=[], $legend='table_name', $submit=true) {
 		// Legend defaults to the table name
 		if ($legend == 'table_name') {
 			$legend = $this->table;
@@ -259,7 +257,7 @@ class Record {
 						}
 					}
 
-					$label = \Sleepy\Hook::addFilter('dbForm_label', $label);
+					$label = Hook::addFilter('dbForm_label', $label);
 
 					?>
 					<li>
@@ -347,7 +345,7 @@ class Record {
 								'dbForm_list',
 								$this->table . "_dbForm_list"
 							) as $filterName) {
-								$buffer = \Sleepy\Hook::addFilter($filterName, Array(
+								$buffer = Hook::addFilter($filterName, Array(
 									$buffer,
 									$meta['native_type'],
 									$label,

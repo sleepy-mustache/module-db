@@ -10,24 +10,26 @@ namespace Module\DB;
  * ### Usage
  *
  * <code>
- *   \Module\DB\DB::$dbhost = 'localhost';
- *   \Module\DB\DB::$dbname = 'db';
- *   \Module\DB\DB::$dbuser = 'username';
- *   \Module\DB\DB::$dbpass = 'itsmeopenup';
- *   $db = \Module\DB\DB::getInstance();
+ *   \Module\DB\Connection::$dbhost = 'localhost';
+ *   \Module\DB\Connection::$dbname = 'db';
+ *   \Module\DB\Connection::$dbuser = 'username';
+ *   \Module\DB\Connection::$dbpass = 'itsmeopenup';
+ *   $db = \Module\DB\Connection::getInstance();
  * </code>
  *
  * ### Changelog
- *
+ * ## Version 2.0
+ * * Made 2.x compatible
+ * 
  * ## Version 1.12
  * * Added the date section to the documentation
  *
- * @date August 13, 2014
+ * @date July 30, 2020
  * @author Jaime A. Rodriguez <hi.i.am.jaime@gmail.com>
- * @version 1.2
+ * @version 2.0
  * @license  http://opensource.org/licenses/MIT
  */
-abstract class DB {
+abstract class Connection {
 
 	/**
 	 * PDO The single instance is stored here.

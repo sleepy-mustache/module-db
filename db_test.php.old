@@ -1,4 +1,7 @@
 <?php
+
+// @todo make this work with PHPUnit
+
 require_once('class.db.php');
 require_once('class.record.php');
 
