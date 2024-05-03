@@ -1,8 +1,8 @@
 <?php
 namespace Module\DB;
 
-require_once(dirname(__FILE__) . '/class.record.php');
-require_once(dirname(__FILE__) . '/../../core/class.hooks.php');
+use Sleepy\Core\Hook;
+use Module\DB\Record;
 
 /**
  * Create an iterable list of records
@@ -10,7 +10,10 @@ require_once(dirname(__FILE__) . '/../../core/class.hooks.php');
   * ### Usage
  *
  * <code>
- *   $facilities = new \Module\DB\RecordList(new Facility(), 'active=1');
+ *   use Module\DB\RecordList;
+ *   use Example\Record\Facility;
+ * 
+ *   $facilities = new RecordList(new Facility(), 'active=1');
  *   foreach ($facilities as $f) {
  *     $f->columns['active'] = 0;
  *     $f->save();
@@ -19,17 +22,12 @@ require_once(dirname(__FILE__) . '/../../core/class.hooks.php');
  *
  * ### Changelog
  *
- * ## Version 1.0
- * *
+ * ## Version 2.0
+ * * Made 2.x compatible
  *
- * @section dependencies Dependencies
- * * class.hooks.php
- * * class.db.php
- * * class.record.php
- *
- * @date May 10, 2019
+ * @date July 30, 2020
  * @author Jaime A. Rodriguez <jaime@rodriguez-jr.com>
- * @version  1.0
+ * @version  2.0
  * @license  http://opensource.org/licenses/MIT
  **/
 
@@ -44,11 +42,11 @@ class RecordList extends \ArrayIterator {
     
     $items = [];
     
-    $this->key   = \Sleepy\Hook::addFilter('record_list_key',   $record->primaryKey);
-    $this->table = \Sleepy\Hook::addFilter('record_list_table', $record->table);
-    $this->where = \Sleepy\Hook::addFilter('record_list_where', $where);
+    $this->key   = Hook::addFilter('record_list_key',   $record->primaryKey);
+    $this->table = Hook::addFilter('record_list_table', $record->table);
+    $this->where = Hook::addFilter('record_list_where', $where);
 
-    $this->db = DB::getInstance();
+    $this->db = Connection::getInstance();
 
     if (!empty($this->where)) {
       $query = $this->db->prepare("SELECT `{$this->key}` FROM `{$this->table}` WHERE {$this->where}");
@@ -67,7 +65,7 @@ class RecordList extends \ArrayIterator {
     foreach ($rows = $query->fetchAll() as $row) {
       $instance = clone $record;
       $instance->load($row[$this->key]);
-      \Sleepy\Hook::addFilter("record_list_item", $instance);
+      Hook::addFilter("record_list_item", $instance);
       array_push($items, $instance);
     }
 
